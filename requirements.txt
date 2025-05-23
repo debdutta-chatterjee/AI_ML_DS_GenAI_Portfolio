@@ -5,4 +5,5 @@ pandas
 seaborn
 scikit-learn
 tensorflow
-tensorflow-gpu
+tree
+torch

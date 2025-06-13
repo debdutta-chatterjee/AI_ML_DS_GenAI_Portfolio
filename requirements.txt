@@ -4,6 +4,6 @@ numpy
 pandas
 seaborn
 scikit-learn
-tensorflow
 tree
 torch
+tensorflow==2.10

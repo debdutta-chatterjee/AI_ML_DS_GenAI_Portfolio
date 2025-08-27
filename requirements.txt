@@ -6,4 +6,9 @@ seaborn
 scikit-learn
 tree
 torch
-tensorflow==2.10
+#tensorflow==2.10
+langchain
+langgraph
+Ipykernel
+dotenv
+langchain_google_genai

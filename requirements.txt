@@ -12,3 +12,6 @@ langgraph
 Ipykernel
 dotenv
 langchain_google_genai
+langchain_community
+tqdm
+pypdf

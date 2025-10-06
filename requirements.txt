@@ -15,3 +15,6 @@ langchain_google_genai
 langchain_community
 tqdm
 pypdf
+langchain_huggingface
+sentence_transformers
+tf-keras

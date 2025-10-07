@@ -18,3 +18,5 @@ pypdf
 langchain_huggingface
 sentence_transformers
 tf-keras
+chromadb
+langchain_google_vertexai

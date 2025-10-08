@@ -20,3 +20,4 @@ sentence_transformers
 tf-keras
 chromadb
 langchain_google_vertexai
+langchain_experimental

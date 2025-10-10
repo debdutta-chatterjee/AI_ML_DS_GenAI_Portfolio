@@ -22,5 +22,6 @@ chromadb
 langchain_google_vertexai
 langchain_experimental
 faiss-cpu
-notebook_tqdm
+#notebook_tqdm
 rank_bm25
+ipykernel

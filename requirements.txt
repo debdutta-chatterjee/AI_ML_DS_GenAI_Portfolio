@@ -26,3 +26,5 @@ faiss-cpu
 rank_bm25
 ipykernel
 type_extensions
+arxiv
+wikipedia

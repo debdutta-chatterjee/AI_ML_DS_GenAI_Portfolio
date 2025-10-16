@@ -28,3 +28,4 @@ ipykernel
 type_extensions
 arxiv
 wikipedia
+tiktoken

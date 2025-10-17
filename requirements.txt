@@ -29,3 +29,4 @@ type_extensions
 arxiv
 wikipedia
 tiktoken
+cryptography

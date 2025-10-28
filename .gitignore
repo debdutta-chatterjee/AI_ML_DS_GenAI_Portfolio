@@ -7,6 +7,7 @@ __pycache__/
 *.so
 
 # Distribution / packaging
+.myvenv/
 .Python
 build/
 develop-eggs/
@@ -183,3 +184,4 @@ RAG/chrom_db/dedec3d2-5ac9-4301-9d98-7eb581413ee8/data_level0.bin
 RAG/chrom_db/dedec3d2-5ac9-4301-9d98-7eb581413ee8/header.bin
 RAG/chrom_db/dedec3d2-5ac9-4301-9d98-7eb581413ee8/length.bin
 RAG/chrom_db/dedec3d2-5ac9-4301-9d98-7eb581413ee8/link_lists.bin
+.myvenv/Scripts/python.exe

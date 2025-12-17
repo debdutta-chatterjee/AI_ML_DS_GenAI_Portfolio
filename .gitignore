@@ -187,3 +187,5 @@ RAG/chrom_db/dedec3d2-5ac9-4301-9d98-7eb581413ee8/link_lists.bin
 .myvenv/Scripts/python.exe
 LangGraph/chatbot.db
 mcp_venv/
+ML/RF/heart.csv
+ML/RF/mnist_train.csv

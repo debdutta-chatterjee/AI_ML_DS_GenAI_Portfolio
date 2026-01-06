@@ -1,0 +1,19 @@
+model = Sequential()
+
+model.add(Dense(11,activation='sigmoid',input_dim=11))
+model.add(Dense(11,activation='sigmoid'))
+model.add(Dense(1,activation='sigmoid'))
+
+model.summary()
+
+model.compile(optimizer='Adam',loss='binary_crossentropy',metrics=['accuracy'])
+history = model.fit(X_train,y_train,batch_size=50,epochs=100,verbose=1,validation_split=0.2)
+
+y_pred = model.predict(X_test)
+y_pred = y_pred.argmax(axis=-1)
+
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+
+plt.plot(history.history['accuracy'])
+plt.plot(history.history['val_accuracy'])

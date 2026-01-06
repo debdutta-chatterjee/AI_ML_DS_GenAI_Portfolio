@@ -1,0 +1,35 @@
+# Very simple RAG example with LangChain
+
+from langchain.text_splitter import CharacterTextSplitter
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.vectorstores import FAISS
+from langchain.llms import OpenAI
+from langchain.chains import RetrievalQA
+
+# 1. Load your documents (here just a string for simplicity)
+docs = ["RAG stands for Retrieval-Augmented Generation. It improves LLMs by grounding answers in external knowledge."]
+
+# 2. Split into chunks
+splitter = CharacterTextSplitter(chunk_size=50, chunk_overlap=0)
+chunks = splitter.create_documents(docs)
+
+# 3. Create embeddings and store them in FAISS
+embeddings = OpenAIEmbeddings()
+vectorstore = FAISS.from_documents(chunks, embeddings)
+
+# 4. Build a retriever
+retriever = vectorstore.as_retriever()
+
+# 5. Create a simple RAG chain
+qa = RetrievalQA.from_chain_type(
+    llm=OpenAI(),
+    retriever=retriever,
+    chain_type="stuff"
+)
+
+# 6. Ask a question
+query = "What is RAG?"
+answer = qa.run(query)
+
+print("Q:", query)
+print("A:", answer)

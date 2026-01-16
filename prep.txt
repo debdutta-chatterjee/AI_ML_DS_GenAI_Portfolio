@@ -1,0 +1,229 @@
+loader = PyPDFLoader()
+docs = loader.load('')
+
+docs = RecursiveCharacterTextSplitter().split_documents(chunk_size=200,chunk_overlap=20)
+
+for d in docs:
+	d.metadata['source'] = 'sample'
+
+embedding = AzureOpenAIEmbeddings(model ='text_embedding-3-large',dim=3072)
+vs = FAISS.from_documents(docs, embedding)
+
+dense_retriever = vs.as_retriever(search_type ='mmr',kwargs = {'k':3,'lambda_mult':0.5}
+dense_retriever = vs.as_retriever(search_type ='similarity',kwargs = {'k':3,'similarity_thresold':0.8}
+
+sparse_retriver = BM25Retriever.from_documents(docs)
+sparse_retriver.k = 3
+
+
+hybrid = EnsembleRetriver([
+sparse_retriver,dense_retriever
+],
+weights =[0.3,0.7])
+
+model = AzureChatOpenAI(model = 'gpt-5', kwargs={'temparature':0, 'top_p':0, stop = '```',seed =10})
+
+prompt = ChatPromptTemplate('Answer the question {question} based on the context {context}'
+, input_variables = ['question','context'])
+chain = create_stuff_documents_chain(model,prompt)
+
+re_chain = create_retrieval_chain(hybrid, combine_docs_chain = chain)
+
+re_chain.invoke({'question':'tell me abut attention'})
+
+
+bm25_retriever = BM25Retriever.from_documents(docs) reranker = CohereRerank(model="rerank-english-v2.0") compression_retriever = ContextualCompressionRetriever( base_retriever=bm25_retriever, base_compressor=reranker ) results = compression_retriever.get_relevant_documents("What is BM25?")
+
+
+
+
+
+=====FastAPI=============
+
+from fastapi import FastAPI
+
+app = FastAPI()
+
+ @app.exceptionhandler(Exception)
+def handler(req: Request, ex:Exception):
+	raise HTTPException(status_code =500, details = ex)
+
+
+@app.post('rag/query/{query}')
+def preprocess(query):
+	return JSONResponse(content = {},status_code =201)
+
+
+@app.post('rag/ingest')
+def preprocess(file :FileUpload = File(...)):
+
+	f = file.readfile()
+
+	return JSONResponse(content = {},status_code =201)
+
+
+
+
+
+
+
+
+===============Reranking===================== 	
+base_retriever = BM25Retriever.from_documents(docs)
+reranker = CohereReranker('reranker-english-v2.0')
+
+r = ContextualCompressorRetriever(
+	base_retriever = base_retriever,
+	base_compressor = reranker)	
+
+r.get_relevant_documents(query)
+
+
+====Grid search =====
+
+X, y = load_iris(return_X_y = True)
+X_train,y_train,X_test,y_test = train_test_split(X,y,test_size=0.2)
+
+X_train = StandardScaler.fit_transform(X_train)
+X_test = StandardScaler.transform(X_train)
+
+cf = DecisionTreeClassifier(n_estimator = 100)
+
+
+params_grid ={'max_depth' = [1,2,3],
+		'min_samples_split':[],
+		'criterion' = ['gini','log_loss','entropy'],
+		'min_sample_leaf' = []
+		}
+
+grid = GridSearchCV(
+	X_train, y_train,
+	cv= 5,
+	njobs = -1,
+	params_grid= params_grid,	
+)
+
+
+==== lang graph =====
+
+class State(BaseModel):
+	query:str
+	message : str
+
+
+
+graph = StateGraph(State)
+
+
+def llm_node(State):
+	output = llm.invoke(state['query']
+	return {'message' : state['message']+output}
+
+def tool_node(State) -> Literal['tool',END]:
+	msg = state['message']
+	 
+	if 'tool_call' in msg[-1]:
+		return 'tool'
+	else:
+		END
+		
+graph.add_node('llm',llm_node)
+
+graph.add_node('tool_node',tool_node)
+
+
+graph.compile()
+
+graph.invoke({'query':'hh')
+
+
+
+
+
+===============MCP =======================
+
+mcp = FastMCP()
+
+@mcp.tool
+def calc(num1,num2):
+""" add nums """
+	return num1+ num2
+
+
+
+
+servers = {
+
+
+}
+
+
+
+
+client = MultiServerMCPClient(servers)
+
+tools = await client.get_tools()
+
+named_tools = {}
+
+
+for t in tools:
+	named_tools[tool.name] = t
+
+llm = ChatOpenAI(temperature = 0)
+
+
+
+llm_with_tool = llm.bind_tools(tools)
+
+prompt = ''
+
+response = llm_with_tool.ainvoke(prompt)
+
+if 'tool_call' in response.content :
+
+for tc in response.tool_call:
+	name = tc['name']
+	id = tc['id']
+	arg = tc.get('args') or {}
+
+
+	await 	named_tools[name].ainvoke(arg)
+tool_messages.append(ToolMessage(tool_call_id=selected_tool_id, content=json.dumps(result)))
+        
+
+    final_response = await llm_with_tools.ainvoke([prompt, response, *tool_messages])
+    print(f"Final response: {final_response.content}")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

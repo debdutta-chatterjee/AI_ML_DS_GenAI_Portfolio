@@ -1,0 +1,137 @@
+# -------------------------------
+# Ingestion
+# -------------------------------
+from langchain.document_loaders import PyPDFLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.vectorstores import FAISS
+from langchain.retrievers import BM25Retriever, EnsembleRetriever
+from langchain.chat_models import ChatOpenAI
+from langchain.prompts import PromptTemplate, ChatPromptTemplate
+
+# Load PDF into documents
+loader = PyPDFLoader("file.pdf")
+documents = loader.load()
+
+# -------------------------------
+# Chunking
+# -------------------------------
+splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=200)
+documents = splitter.split_documents(documents)
+
+# -------------------------------
+# Add Metadata
+# -------------------------------
+# Example: enrich each chunk with metadata
+for doc in documents:
+    doc.metadata["source"] = "Annual Report 2025"
+    doc.metadata["author"] = "Finance Dept"
+    doc.metadata["date"] = "2025-03-15"
+    doc.metadata["section"] = "Revenue Analysis"
+
+# -------------------------------
+# Vector Store
+# -------------------------------
+vs = FAISS.from_documents(documents)
+
+# Retriever with metadata filtering
+retriever_sim = vs.as_retriever(
+    search_type="similarity",
+    search_kwargs={
+        "k": 5,
+        "filter": {"author": "Finance Dept", "section": "Revenue Analysis"}  # metadata filter
+    }
+)
+
+# Sparse retriever (BM25)
+sparse_retriever = BM25Retriever.from_documents(documents)
+
+# Ensemble retriever combining dense + sparse
+ensemble_retriever = EnsembleRetriever(
+    retrievers=[retriever_sim, sparse_retriever],
+    weights=[0.8, 0.2]
+)
+
+# Query
+query = "What is the revenue trend?"
+ret_docs = ensemble_retriever.get_relevant_documents(query)
+
+# -------------------------------
+# Model
+# -------------------------------
+model = ChatOpenAI(model="gpt-4", temperature=0.2, top_p=0.5, seed=10, stop=["```"])
+
+# -------------------------------
+# Generation Chain
+# -------------------------------
+chain = create_stuff_documents_chain(llm=model, retriever=ensemble_retriever)
+response = chain.invoke(query)
+
+print(response)
+
+# -------------------------------
+# Prompt Templates
+# -------------------------------
+prompt = PromptTemplate(
+    template="Answer the following question: {question}",
+    input_variables=["question"],
+    validate_template=True
+)
+prompt.save('template.json')
+print(prompt.format(question="What is the revenue trend?"))
+
+chat_prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant."),
+    ("human", "...{q}"),
+    ("ai", "...")
+])
+
+print(chat_prompt.format_messages(q="What is the revenue trend?"))
+
+
+from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
+
+# Define a chat prompt with system + human + AI roles
+chat_prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant."),
+    MessagesPlaceholder(variable_name="history"),   # <-- placeholder for past conversation
+    ("human", "Question: {q}"),
+    ("ai", "Answer:")
+])
+
+# Example: injecting conversation history dynamically
+history = [
+    {"role": "human", "content": "What is the revenue for 2024?"},
+    {"role": "ai", "content": "Revenue grew 15% year-over-year."}
+]
+
+# Format with history + new query
+formatted = chat_prompt.format_messages(
+    history=history,
+    q="And how does that compare to 2023?"
+)
+
+for msg in formatted:
+    print(msg)
+
+parser = JsonOutputParser()
+template = PromptTemplate(
+    template='Give me 5 facts about {topic} \n {format_instruction}',
+    input_variables=['topic'],
+    partial_variables={'format_instruction': parser.get_format_instructions()}
+)
+
+chain = template | model | parser
+
+schema = [
+    ResponseSchema(name='fact_1', description='Fact 1 about the topic'),
+    ResponseSchema(name='fact_2', description='Fact 2 about the topic'),
+    ResponseSchema(name='fact_3', description='Fact 3 about the topic'),
+]
+
+parser = StructuredOutputParser.from_response_schemas(schema)
+
+template = PromptTemplate(
+    template='Give 3 fact about {topic} \n {format_instruction}',
+    input_variables=['topic'],
+    partial_variables={'format_instruction':parser.get_format_instructions()}
+)

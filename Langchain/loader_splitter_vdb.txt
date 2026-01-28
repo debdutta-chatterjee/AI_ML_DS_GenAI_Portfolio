@@ -1,0 +1,78 @@
+loader = DirectoryLoader(
+    path='books',
+    glob='*.pdf',
+    loader_cls=PyPDFLoader
+)
+
+docs = loader.lazy_load()
+
+for document in docs:
+    print(document.metadata)
+
+
+loader = TextLoader('cricket.txt', encoding='utf-8')
+
+url = 'https://www.flipkart.com/apple-macbook-air-m2-16-gb-256-gb-ssd-macos-sequoia-mc7x4hn-a/p/itmdc5308fa78421'
+loader = WebBaseLoader(url)
+
+splitter = CharacterTextSplitter(
+    chunk_size=200,
+    chunk_overlap=0,
+    separator=''
+)
+
+splitter = RecursiveCharacterTextSplitter.from_language(
+    language=Language.MARKDOWN,
+    chunk_size=200,
+    chunk_overlap=0,
+)
+
+text_splitter = SemanticChunker(
+    OpenAIEmbeddings(), breakpoint_threshold_type="standard_deviation",
+    breakpoint_threshold_amount=3
+)
+
+
+vector_store.get(include=['embeddings','documents', 'metadatas'])
+vector_store.similarity_search(
+    query='Who among these are a bowler?',
+    k=2
+)
+vector_store.similarity_search_with_score(
+    query="",
+    filter={"team": "Chennai Super Kings"}
+)
+vector_store.update_document(document_id='09a39dc6-3ba6-4ea7-927e-fdda591da5e4', document=updated_doc1)
+vector_store.delete(ids=['09a39dc6-3ba6-4ea7-927e-fdda591da5e4'])
+vector_store.get_by_ids(['2436bdb8-3f5f-49c6-8915-0c654c888700'])
+
+retriever = vectorstore.as_retriever(
+    search_type="mmr",                   # <-- This enables MMR
+    search_kwargs={"k": 3, "lambda_mult": 0.5}  # k = top results, lambda_mult = relevance-diversity balance
+)
+multiquery_retriever = MultiQueryRetriever.from_llm(
+    retriever=vectorstore.as_retriever(search_kwargs={"k": 5}),
+    llm=ChatOpenAI(model="gpt-3.5-turbo")
+)
+
+compressor = LLMChainExtractor.from_llm(llm)
+compression_retriever = ContextualCompressionRetriever(
+    base_retriever=base_retriever,
+    base_compressor=compressor
+)
+llm_with_tools = llm.bind_tools([multiply])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

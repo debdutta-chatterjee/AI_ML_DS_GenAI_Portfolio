@@ -1,0 +1,32 @@
+parallel_chain = RunnableParallel({
+    'notes': prompt1 | model1 | parser,
+    'quiz': prompt2 | model2 | parser
+})
+
+branch_chain = RunnableBranch(
+    (lambda x:x.sentiment == 'positive', prompt2 | model | parser),
+    (lambda x:x.sentiment == 'negative', prompt3 | model | parser),
+    RunnableLambda(lambda x: "could not find sentiment")
+)
+
+chain = RunnableSequence(prompt1, model, parser, prompt2, model, parser)
+
+joke_gen_chain = RunnableSequence(prompt1, model, parser)
+
+parallel_chain = RunnableParallel({
+    'joke': RunnablePassthrough(),
+    'explanation': RunnableSequence(prompt2, model, parser)
+})
+
+final_chain = RunnableSequence(joke_gen_chain, parallel_chain)
+
+
+joke_gen_chain = RunnableSequence(prompt, model, parser)
+
+parallel_chain = RunnableParallel({
+    'joke': RunnablePassthrough(),
+    'word_count': RunnableLambda(word_count)
+})
+
+final_chain = RunnableSequence(joke_gen_chain, parallel_chain)
+

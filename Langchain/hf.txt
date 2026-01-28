@@ -1,0 +1,21 @@
+
+
+hf_endpoint = HuggingFaceEndpoint(
+    repo_id = 'TinyLlama/TinyLlama-1.1B-Chat-v1',
+    task = 'text-generation'
+)
+
+model = ChatHuggingFace(llm = hf_endpoint)
+
+
+os.environ['HF_HOME'] = ''
+
+llm = HuggingFacePipeline.from_model_id(
+    model_id = 'TinyLlama/TinyLlama-1.1B-Chat-v1',
+    task = 'text_generation',
+    pipeline_kwargs ={
+        temparature =0.5,
+        max_new_tokens= 1000
+    }
+)
+

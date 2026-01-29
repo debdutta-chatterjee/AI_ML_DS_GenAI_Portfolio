@@ -1,0 +1,88 @@
+from typing import Literal
+from pydantic import BaseModel, Field
+from langgraph.graph import StateGraph, START, END
+
+class MessageState(BaseModel):
+    msg: str = Field(description="Message string")
+
+def node1(state: MessageState):
+    return {"msg": "hi"}
+
+def node2(state: MessageState):
+    return {"msg": state.msg + " -> node2"}
+
+def router(state: MessageState) -> Literal["node2", END]:
+    msg = state.msg
+    if msg.endswith("end"):
+        return END
+    else:
+        return "node2"
+
+graph = StateGraph(MessageState)
+
+# Add nodes
+graph.add_node("node1", node1)
+graph.add_node("node2", node2)
+graph.add_node("router", router)
+
+# Add edges
+graph.add_edge(START, "node1")
+graph.add_edge("node1", "router")
+graph.add_conditional_edges("router", {"node2": "node2", END: END})
+
+# Compile the graph
+checkpointer = InmemorySaver()
+app = graph.compile(checkpointer = checkpointer)
+
+
+config1 = {'configurable':{'thread_id':'thread1'}}
+graph.invoke({'topi':topic},config=config)
+workflow.get_state(config1)
+list(workflow.get_state_history(config1))
+
+
+#Time travel
+workflow.get_state({"configurable": {"thread_id": "1", "checkpoint_id": "1f06cc6e-7232-6cb1-8000-f71609e6cec5"}})
+workflow.invoke(None, {"configurable": {"thread_id": "1", "checkpoint_id": "1f06cc6e-7232-6cb1-8000-f71609e6cec5"}})
+
+#Update state
+workflow.update_state({"configurable": {"thread_id": "1", "checkpoint_id": "1f06cc6e-7232-6cb1-8000-f71609e6cec5", "checkpoint_ns": ""}}, {'topic':'samosa'})
+
+#Reducer
+class ChatState(TypedDict):
+
+    messages: Annotated[list[BaseMessage], add_messages]
+
+#Tool node
+tool_node = ToolNode(tools)
+graph = StateGraph(ChatState)
+
+    graph.add_node("chat_node", chat_node)
+    graph.add_node("tools", tool_node)
+
+    # defining graph connections
+    graph.add_edge(START, "chat_node")
+    graph.add_conditional_edges("chat_node", tools_condition)
+    graph.add_edge("tools", "chat_node")
+
+
+from langchain_openai import ChatOpenAI
+from langgraph.prebuilt import create_react_agent
+from langchain_core.tools import tool
+
+# 1. Define a simple tool
+@tool
+def add_numbers(a: int, b: int) -> int:
+    """Add two integers and return the sum."""
+    return a + b
+
+# 2. Initialize the LLM
+llm = ChatOpenAI(model="gpt-4o-mini")  # you can swap with gpt-5 if available
+
+# 3. Create the ReAct agent with the tool
+agent = create_react_agent(llm, tools=[add_numbers])
+
+# 4. Run the agent with a query
+response = agent.invoke({"input": "What is 12 plus 30?"})
+
+print(response)

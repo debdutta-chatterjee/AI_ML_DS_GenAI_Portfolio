@@ -1,0 +1,35 @@
+from langchain_openai import ChatOpenAI
+from langchain.evaluation import load_evaluator
+
+# 1. Define your LLM
+llm = ChatOpenAI(model="gpt-4o-mini")
+
+# 2. Load evaluators
+precision_eval = load_evaluator("precision")
+recall_eval = load_evaluator("recall")
+ndcg_eval = load_evaluator("ndcg")
+
+# 3. Define ground truth and predictions
+ground_truth = ["apple", "banana", "cherry"]
+predictions = ["apple", "cherry", "date"]
+
+# 4. Run evaluations
+precision_result = precision_eval.evaluate_strings(
+    prediction=predictions,
+    reference=ground_truth
+)
+
+recall_result = recall_eval.evaluate_strings(
+    prediction=predictions,
+    reference=ground_truth
+)
+
+ndcg_result = ndcg_eval.evaluate_strings(
+    prediction=predictions,
+    reference=ground_truth
+)
+
+# 5. Print results
+print("Precision:", precision_result)
+print("Recall:", recall_result)
+print("NDCG:", ndcg_result)

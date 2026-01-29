@@ -1,0 +1,69 @@
+https://github.com/campusx-official/mcp-client/blob/main/client1.py
+
+
+#Create mcp server
+
+from fastmcp import FastMCP
+
+mcp = FastMCP('app-name')
+
+@mcp.tool
+async def calculator(a:int,b:int)->int:
+    """ doc string"""
+
+    return a+b
+
+
+uvicorn --reload mcp:app
+
+#MCP client
+async def main():
+    SERVER = {
+
+        'calc':{
+            'transport':'streamable_http'/'stdio',
+            'command': 'uv location',
+            'args':[
+                "run",
+                "fastmcp",
+                "run",
+                "/Users/nitish/Desktop/mcp-math-server/main.py"
+            ]
+            'url':''
+        }
+
+
+    }
+    client = MultiServerMCPClient(SERVER)
+    tools = await client.get_tools()
+
+    named_tools = {}
+    for t in tools:
+        named_tools[tool.name] = t
+
+    llm_tool = llm.bind_tools(tools)
+
+    result = await llm_tool.ainvoke(query)
+
+
+    if not getattr(result,'tool_calls',none):
+        return result.content
+
+    if 'tool_call' in result.content:
+        tool_msg = []
+        for tc in result.tool_calls:
+            t_name = tc['name']
+            args = tc.get('args') or {}
+            id = tc['id']
+
+            tool_result = await named_tools[t_name].ainvoke(args)
+            msg = ToolMessage(tool_call_id = id, content=json.dumps(tool_result))
+            tool_msg.append(msg)
+
+        final =llm_tool.ainvoke([prompt,result,*tool_messages])
+
+
+if __name__ == '__main__':
+    asyncio.run(main())
+
+

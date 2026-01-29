@@ -30,3 +30,40 @@ parallel_chain = RunnableParallel({
 
 final_chain = RunnableSequence(joke_gen_chain, parallel_chain)
 
+from langchain_openai import ChatOpenAI
+from langchain.chains import create_stuff_document_chain, create_retrieval_chain
+from langchain.prompts import ChatPromptTemplate
+from langchain.vectorstores import FAISS
+from langchain.embeddings import OpenAIEmbeddings
+from langchain_core.documents import Document
+
+# 1. Create a small FAISS vector store with sample docs
+docs = [
+    Document(page_content="The capital of France is Paris."),
+    Document(page_content="The capital of Germany is Berlin."),
+    Document(page_content="The capital of Italy is Rome."),
+]
+
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+vectorstore = FAISS.from_documents(docs, embeddings)
+
+retriever = vectorstore.as_retriever()
+
+# 2. Define the LLM
+llm = ChatOpenAI(model="gpt-4o-mini")
+
+# 3. Create a prompt template for stuffing docs
+prompt = ChatPromptTemplate.from_template(
+    "Answer the question based on the following documents:\n{context}\n\nQuestion: {input}"
+)
+
+# 4. Create the document chain
+document_chain = create_stuff_document_chain(llm, prompt)
+
+# 5. Create the retrieval chain
+retrieval_chain = create_retrieval_chain(retriever, document_chain)
+
+# 6. Run a query
+response = retrieval_chain.invoke({"input": "What is the capital of France?"})
+
+print(response)

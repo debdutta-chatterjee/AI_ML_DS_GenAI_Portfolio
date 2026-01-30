@@ -1,0 +1,86 @@
+# Load PDF
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_openai import OpenAIEmbeddings
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores import FAISS
+from langchain.retrievers import BM25Retriever, EnsembleRetriever
+from langchain_cohere import CohereReranker
+from langchain.prompts import ChatPromptTemplate
+from langchain_huggingface import HuggingFaceEndpoint, ChatHuggingFace
+from langchain.chains import create_stuff_document_chain, create_retrieval_chain
+
+# 1. Load and split documents
+loader = PyPDFLoader("file.pdf")
+docs = loader.load()
+
+embedding = OpenAIEmbeddings(model="text-embedding-3-large", dimensions=3072)
+
+splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=200)
+docs = splitter.split_documents(docs)
+
+# 2. Build vector store
+vs = FAISS.from_documents(docs, embedding)
+
+# 3. Define retrievers
+# Dense retriever (similarity search with filter)
+dense_retriever = vs.as_retriever(
+    search_type="similarity",
+    search_kwargs={"k": 3, "score_threshold": 0.5},  # corrected key name
+    filter={"date": {"gt": "2025"}}
+)
+
+# Sparse retriever (BM25)
+sparse_retriever = BM25Retriever.from_documents(docs)
+
+# Ensemble retriever (combine dense + sparse)
+ensemble_retriever = EnsembleRetriever(
+    retrievers=[dense_retriever, sparse_retriever],
+    weights=[0.8, 0.2]
+)
+
+# 4. Add reranker
+reranker = CohereReranker(model="rerank-english-v2")
+
+# 5. Prompt template
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant."),
+    ("human", "{input}")
+])
+
+# 6. Define LLM
+hf = HuggingFaceEndpoint(
+    repo_id="TinyLlama/TinyLlama-1.1B-v1",
+    task="text-generation"
+)
+llm = ChatHuggingFace(hf)
+
+# 7. Create document chain (stuffing retrieved docs into prompt)
+document_chain = create_stuff_document_chain(llm, prompt)
+
+# 8. Create retrieval chain with reranker
+retrieval_chain = create_retrieval_chain(
+    retriever=ensemble_retriever,
+    combine_docs_chain=document_chain,
+    reranker=reranker  # reranker applied after retrieval
+)
+
+# 9. Run query
+query = "What is the summary of the document?"
+response = retrieval_chain.invoke({"input": query})
+
+print(response)
+
+
+
+model = Sequential()
+model.add(Dense(10,activation=relu,input_dim=10))
+model.add(Dropout(0.2))
+model.add(Dense(10,activation=relu))
+model.add(BatchNormalization())
+model.add(Dense(1,activation=sigmoid))
+callback = [EarlyStopping(patience=5,monitor='val_loss')]
+model.complie(optimizer='adam',metrics=['accuracy'],loss='binary_crossentropy')
+
+history = model.fit(X_train,y_train,cv=5,validation_split=0.2,epochs=100,batch_size=50)
+y_pred = model.predict(X_test_trf)
+y_pred_binary = (y_pred > 0.5).astype(int).reshape(-1)

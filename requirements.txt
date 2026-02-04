@@ -31,3 +31,4 @@ wikipedia
 tiktoken
 cryptography
 langgraph_supervisor
+langchain-ollama

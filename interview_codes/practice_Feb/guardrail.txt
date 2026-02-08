@@ -1,0 +1,22 @@
+try:
+  # Create a guard with profanity filter
+  guard = Guard().use(ProfanityFree(on_fail="exception"))
+
+  # Suppose LLM returns a message
+  output = "You are a stupid idiot!"
+
+  res = guard.validate(output)  # This will raise or fail because profanity found
+
+except Exception as e:
+  print(e)
+
+guard = Guard().use(
+    DetectPII(pii_entities=["EMAIL_ADDRESS", "PHONE_NUMBER"], on_fail="noop")
+)
+
+
+guard = Guard().use(ToxicLanguage, threshold=0.5, validation_method="sentence", on_fail="exception")
+guard.validate(
+          "Please look carefully. You are a stupid idiot who can't do \
+          anything right. You are a good person"
+  )guard = Guard().use(DetectJailbreak)

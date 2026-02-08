@@ -1,0 +1,33 @@
+from fastapi import FastAPI, UploadFile, File, Request, HTTPException
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+
+app = FastAPI()
+
+class RequestModel(BaseModel):
+    data: str
+
+# Exception handler
+@app.exception_handler(Exception)
+async def handle_exception(req: Request, ex: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(ex)}
+    )
+
+# Endpoint
+@app.post("/query/{queryid}")
+async def query_process(
+    queryid: int,
+    file: UploadFile = File(...),
+    request: RequestModel = None
+):
+    # Read file content
+    file_content = await file.read()
+
+    # Example response
+    return JSONResponse(
+        content={"queryid": queryid, "data": request.data, "file_size": len(file_content)},
+        status_code=201
+    )
+

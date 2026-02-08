@@ -1,0 +1,96 @@
+# Imports
+from typing import Annotated
+from pydantic import BaseModel
+from langchain_core.tools import tool
+from langgraph.graph import StateGraph, START, END
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.nodes import ToolNode
+from langgraph.types import add_messages   # ✅ use built-in reducer
+
+# 1. Define State with reducer
+class State(BaseModel):
+    # 'message' will accumulate across nodes using add_messages
+    message: Annotated[list[str], add_messages]
+    query: str
+    processed_query: str
+
+# 2. Define tools
+@tool
+def add(state: State):
+    """Add two numbers from query string like '5 3 add'."""
+    try:
+        parts = state.query.split()
+        a, b = int(parts[0]), int(parts[1])
+        return {"message": f"Sum = {a+b}"}
+    except Exception:
+        return {"message": "Invalid input for add"}
+
+@tool
+def subs(state: State):
+    """Subtract two numbers from query string like '10 4 sub'."""
+    try:
+        parts = state.query.split()
+        a, b = int(parts[0]), int(parts[1])
+        return {"message": f"Diff = {a-b}"}
+    except Exception:
+        return {"message": "Invalid input for subs"}
+
+# Wrap tools in a ToolNode
+tool_node = ToolNode([add, subs])
+
+# 3. Define helper nodes
+def get_query(state: State):
+    # Pass query forward
+    return {"query": state.query}
+
+def process(state: State):
+    # Example processing: lowercase query
+    pq = state.query.lower()
+    return {"processed_query": pq}
+
+# 4. Router node
+def router(state: State):
+    """
+    Decide which tool to call based on processed_query.
+    Returns the name of the next node.
+    """
+    if "add" in state.processed_query:
+        return "add"
+    elif "sub" in state.processed_query:
+        return "subs"
+    else:
+        return END  # fallback if no match
+
+# 5. Build graph
+graph = StateGraph(State)
+
+graph.add_node("get_query", get_query)
+graph.add_node("process", process)
+graph.add_node("tool", tool_node)
+
+# Edges
+graph.add_edge(START, "get_query")
+graph.add_edge("get_query", "process")
+
+# Conditional edge: router decides which tool to call
+graph.add_conditional_edges(
+    "process",
+    router,
+    {
+        "add": "tool",
+        "subs": "tool",
+        END: END
+    }
+)
+
+graph.add_edge("tool", END)
+
+# 6. Compile with checkpointer
+checkpointer = InMemorySaver()
+app = graph.compile(checkpointer=checkpointer)
+
+# 7. Run graph
+thread_id = {"configurable": {"thread_id": 1}}
+
+print(app.invoke({"query": "5 3 add"}, configurable=thread_id))
+print(app.invoke({"query": "10 4 sub"}, configurable=thread_id))

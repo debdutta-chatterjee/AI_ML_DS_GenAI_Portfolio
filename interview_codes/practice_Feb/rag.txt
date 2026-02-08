@@ -1,0 +1,58 @@
+
+loader  = PyPDFLoader('file.pdf')
+doc = loader.load()
+
+for d in doc:
+    d.metadata['samle'] = ''
+
+splitter = RecursiveCharacterTextSplitter(chunksize=512,chunk_overlap = 64)
+doc = splitter.split_documents()
+
+embedding = OpenAIEmbeddings(model = 'text-embedding-3-large',dimension=3072)
+vs = FAISS.from_Documents(docs,embedding)
+dense_retriever = vs.as_retriever(
+    search_type ='similarity',
+    search_kwargs = {'k':3,'similartiy_threshold':0.8},
+    filter :{'sample': ''}
+    }
+)
+
+dense_retriever = vs.as_retriever(
+    search_type ='mmr',
+    search_kwargs = {'k':3,'multi_lambda':0.5},
+    filter :{'sample': ''}
+)
+
+sparse_retriever = BM25Retriver.from-documents(doc)
+
+ensemble_retriever = EnsembleRetriever(
+    retrievers = [dense_retriever,sparse_retriever],
+    weights = [0.7,0.2]
+)
+
+reranker = CohereReranker('rerank-english-v2')
+doc = reranker.rerank_documents(query,documents)
+
+prompt = PromptTemplate(
+    'You are a helpful assistant, answer the {query} based on the {context}',
+    input_variable =['query','context'],
+    validate = True
+)
+
+prompt = ChatPromptTemplate(
+    ('system',''),
+    MessagePlaceHolder('history')
+    ('human','')
+)
+
+chain = create_stuff_document_chain(
+    prompt,
+    llm
+)
+
+ret_chain = create_retrieval_chain(
+    retriever = ensemble_retriever,
+    reranker = reranker,
+    chain = chain
+)
+

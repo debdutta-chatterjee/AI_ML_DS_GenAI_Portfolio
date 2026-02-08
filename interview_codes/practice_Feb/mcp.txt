@@ -1,0 +1,49 @@
+from fastmcp import FastMCP
+
+mcp = FastMCP('tool')
+
+@mcp.tool()
+def calculator(a:int,b:int)->int:
+    """"""
+    return a + b
+
+
+uvicorn --reload mcp:mcp
+
+
+SERVERS = {
+    'tool':{
+        'transport':'http_sse',
+        'args':['a','b']
+    }
+
+}
+client = MultiServerMCPClient(SERVERS)
+
+tools  = await client.get_tools()
+
+llm = ChatOpenAI()
+
+named_tools = {}
+for t in tools:
+    named_tools[t.name] = t
+
+llm_tool = llm.bind_tools(tools)
+
+result = llm_tool.ainvoke(query)
+
+if 'tool_calls' in result.content:
+    calls = result.content['tool_calls']
+
+    for tc in tool_calls:
+        id = tc.id
+        name =tc.name
+        args = tc['args'] or {}
+
+        tool_result = await named_tools[t_name].ainvoke(args)
+            msg = ToolMessage(tool_call_id = id, content=json.dumps(tool_result))
+            tool_msg.append(msg)
+
+        final =llm_tool.ainvoke([prompt,result,*tool_messages])
+
+

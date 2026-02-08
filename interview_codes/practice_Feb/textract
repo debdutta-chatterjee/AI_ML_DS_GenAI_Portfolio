@@ -1,0 +1,19 @@
+import boto3
+
+# Initialize Textract client
+textract = boto3.client('textract', region_name='us-east-1')
+
+# Start text detection (for PDFs, TIFFs, images in S3)
+response = textract.detect_document_text(
+    Document={
+        'S3Object': {
+            'Bucket': 'your-bucket-name',
+            'Name': 'your-document.pdf'
+        }
+    }
+)
+
+# Print detected text
+for item in response['Blocks']:
+    if item['BlockType'] == 'LINE':
+        print(item['Text'])

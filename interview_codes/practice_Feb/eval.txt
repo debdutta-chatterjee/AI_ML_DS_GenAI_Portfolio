@@ -1,0 +1,15 @@
+from langchain.eval import load_evaluator
+
+pricision  = load_evaluator('precision')
+recall  = load_evaluator('recall')
+ndcg  = load_evaluator('ndcg')
+
+
+groundtruth = ['','','']
+actual = ['','','']
+
+
+pricision_val = pricision(
+    references = groundtruth,
+    predictions = actual
+)

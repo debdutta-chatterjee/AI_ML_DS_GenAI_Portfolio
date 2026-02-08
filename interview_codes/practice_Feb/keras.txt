@@ -1,0 +1,21 @@
+
+model = Sequential()
+
+model.add(16,input_dim=2,activation='relu')
+model.add(BatchNormalization())
+model.add(16,activation='relu')
+model.add(Dropout(0.2))
+model.add(1,activation='sigmoid')
+
+model.summary()
+
+callbacks = [
+EarlyStopping(patience=10,monitor='val_loss')
+ReduceOnPlateue()
+]
+
+model.compile(loss='binary_crossentopy',optimizer='adam',callbacks=callbacks,metrics=['accuracy])
+history = model.fit(X_train,y_train,epoch =100, batch_size=10,validation_split=0.2)
+
+plt.plot(history.history['val_loss'])
+plt.plot(history.history['val_accuracy'])
